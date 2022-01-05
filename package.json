@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "node-html-parser": "^5.2.0",
+    "sanitize-filename": "^1.6.3",
     "ws": "^8.4.0"
   }
 }

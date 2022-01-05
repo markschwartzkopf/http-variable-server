@@ -1,22 +1,30 @@
 import { clearInterval } from 'timers';
 import WS, { WebSocketServer } from 'ws';
+import HVS from '.';
 import { ServerReplicant } from './replicant';
 import { clientMsg, serverMsg } from './types';
 
 interface hvsWS extends WS {
   isAlive: boolean;
   replicants: { [key: string]: ServerReplicant<any> };
+  server: HVSWS;
   hvsSend: (msg: serverMsg) => void;
   unSubs: (() => void)[];
   unsubscribe: () => void;
 }
 
 export class HVSWS extends WebSocketServer {
+  parentServer: HVS;
   heartbeat: NodeJS.Timer;
-  constructor(port: number) {
-    super({ port: port });
+  constructor(port: number, parent: HVS, cb?: () => void) {
+    super({ port: port }, () => {
+      console.log('ws server started');
+      if (cb) cb();
+    });
+    //super({ port: port }, cb);
+    this.parentServer = parent;
     this.on('connection', (ws) => {
-      init(ws as hvsWS);
+      init(ws as hvsWS, this);
     });
     this.once('close', () => {
       clearInterval(this.heartbeat);
@@ -36,7 +44,8 @@ export class HVSWS extends WebSocketServer {
   }
 }
 
-function init(ws: hvsWS) {
+function init(ws: hvsWS, server: HVSWS) {
+  ws.server = server;
   ws.replicants = {};
   ws.isAlive = true;
   ws.hvsSend = (msg) => {
@@ -69,7 +78,7 @@ function init(ws: hvsWS) {
         case 'newRep':
           const name = data.name;
           if (!ws.replicants.hasOwnProperty(name)) {
-            ws.replicants[name] = new ServerReplicant(name);
+            ws.replicants[name] = ws.server.parentServer.Replicant<any>(name);
             if (ws.replicants[name].initialized) {
               ws.hvsSend({
                 type: 'rep',

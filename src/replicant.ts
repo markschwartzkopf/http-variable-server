@@ -1,12 +1,8 @@
 import { EventEmitter } from 'events';
-import fs from 'fs/promises';
+import fs from 'fs';
+import path from 'path/posix';
 import { protoReplicant } from './types/index';
-
-//
-//intantiate replicants from files
-//
-
-let allReplicants: { [key: string]: ServerReplicant<any> } = {};
+import sanitize from 'sanitize-filename';
 
 export interface ServerReplicant<T> extends protoReplicant<T> {
   on(
@@ -24,23 +20,51 @@ export class ServerReplicant<T> extends EventEmitter
   implements protoReplicant<T> {
   private _value: Exclude<T, undefined> | undefined = undefined;
   private _initialized: boolean = false;
-  private _saved: boolean = true;
-  private _newValBuffer: Exclude<T, undefined>[] = [];
-  constructor(name: string) {
+  private _canSave: boolean = true;
+  private _filename: string;
+  private _name: string;
+  constructor(
+    name: string,
+    allReplicants: { [key: string]: ServerReplicant<any> },
+    initValue?: any,
+    filename?: string
+  ) {
     super();
-    if (allReplicants.hasOwnProperty(name)) return allReplicants[name];
+    this._name = name;
+    if (initValue) {
+      this._value = initValue;
+      this._initialized = true;
+    }
+    if (filename) {
+      this._filename = filename;
+    } else {
+      this._filename = sanitize(name);
+      if (path.basename(name) == name && name != '.' && name != '..')
+        if (allReplicants.hasOwnProperty(name)) return allReplicants[name];
+      while (
+        fs.existsSync(__dirname + '/../replicants/' + this._filename + '.json')
+      ) {
+        this._filename += '_';
+      }
+    }
     allReplicants[name] = this;
-    console.log('code replicant recall'); //set _initialized
-    console.log('code Replicant.save()');
-    /* setInterval(() => {
-      this.save();
-    }, 5000) */
   }
 
-  save() {
-    if (!this._saved) {
-      this._saved = true;
-      console.error('code Replicant.save()');
+  private _save() {
+    if (this._canSave && this._value != undefined) {
+      this._canSave = false;
+      const oldVal = this._value;
+      fs.writeFile(
+        __dirname + '/../replicants/' + this._filename + '.json',
+        JSON.stringify({ name: this._name, value: this._value }),
+        () => {
+          console.log(this._filename + '.json written');
+        }
+      );
+      setTimeout(() => {
+        this._canSave = true;
+        if (this._value !== oldVal) this._save();
+      }, 5000);
     }
   }
 
@@ -56,21 +80,9 @@ export class ServerReplicant<T> extends EventEmitter
   set value(newVal: Exclude<T, undefined>) {
     if (newVal == undefined) throw 'Cannot set replicant value to undefined.';
     this._initialized = true;
-    if (this._newValBuffer.length == 0) {
-      this._newValBuffer.push(newVal);
-      this._set();
-    } else this._newValBuffer.push(newVal);
-  }
-
-  private _set() {
-    if (this._newValBuffer.length > 0) {
-      let newVal = this._newValBuffer[0];
-      if (newVal === this._value) return;
-      this._value = newVal;
-      this.emit('change', newVal);
-      this._newValBuffer.shift();
-      this._saved = false;
-      this._set();
-    }
+    //
+    this._value = newVal;
+    this.emit('change', newVal);
+    this._save();
   }
 }

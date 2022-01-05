@@ -24,7 +24,8 @@ const mimeTypes = {
 export function startHttpServer(
   staticPath: string,
   port: number,
-  wsPort: number
+  wsPort: number,
+  cb?: () => void
 ) {
   return http
     .createServer((req, res) => {
@@ -39,12 +40,8 @@ export function startHttpServer(
       let localPath = staticPath + filePath;
       if (path.basename(filePath) == 'hvs-browser.js') {
         let dirname = __dirname;
-        console.log(dirname);
-        console.log(dirname.slice(-3));
-        console.log(dirname.slice(0, -3) + 'dist');
         if (dirname.slice(-3) == 'src') dirname = dirname.slice(0, -3) + 'dist';
         localPath = dirname + '/browser/hvs-browser.js';
-        console.log(localPath);
       }
       fs.readFile(localPath)
         .then((buf) => {
@@ -72,5 +69,9 @@ export function startHttpServer(
           }
         });
     })
-    .listen(port);
+    .listen(port, () => {
+      console.log('http server started');
+      if (cb) cb();
+    });
+  //.listen(port, cb);
 }
