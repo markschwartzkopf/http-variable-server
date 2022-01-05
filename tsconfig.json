@@ -8,8 +8,9 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "incremental": true,
     "esModuleInterop": true,
-    
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "types": ["@types/jest"],
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["**/*.test.ts"]
+  "exclude": ["**/*.test.ts", "jest.config.ts"]
 }

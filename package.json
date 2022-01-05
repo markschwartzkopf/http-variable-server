@@ -2,12 +2,10 @@
   "name": "http-variable-server",
   "version": "0.0.0",
   "description": "Serves pages and shares variables to browsers",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "watch": "npm-run-all -p watch:*",
-    "watch:server": "node ./node_modules/typescript/bin/tsc -p ./ --diagnostics --watch",
-    "build": "npm-run-all -s build:*",
-    "build:server": "node ./node_modules/typescript/bin/tsc -p ./ --diagnostics",
+    "watch": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics --watch",
+    "build": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics",
     "test": "jest"
   },
   "repository": {
@@ -19,14 +17,16 @@
   "devDependencies": {
     "@types/jest": "^27.4.0",
     "@types/node": "^17.0.6",
+    "@types/puppeteer": "^5.4.4",
     "@types/ws": "^8.2.2",
-    "jest": "^27.4.5",
-    "npm-run-all": "^4.1.5",
+    "jest": "^27.4.6",
+    "puppeteer": "^13.0.1",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4"
   },
   "dependencies": {
+    "node-html-parser": "^5.2.0",
     "ws": "^8.4.0"
   }
 }
