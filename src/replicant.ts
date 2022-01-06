@@ -57,9 +57,7 @@ export class ServerReplicant<T> extends EventEmitter
       fs.writeFile(
         __dirname + '/../replicants/' + this._filename + '.json',
         JSON.stringify({ name: this._name, value: this._value }),
-        () => {
-          console.log(this._filename + '.json written');
-        }
+        () => {}
       );
       setTimeout(() => {
         this._canSave = true;

@@ -17,11 +17,7 @@ export class HVSWS extends WebSocketServer {
   parentServer: HVS;
   heartbeat: NodeJS.Timer;
   constructor(port: number, parent: HVS, cb?: () => void) {
-    super({ port: port }, () => {
-      console.log('ws server started');
-      if (cb) cb();
-    });
-    //super({ port: port }, cb);
+    super({ port: port }, cb);
     this.parentServer = parent;
     this.on('connection', (ws) => {
       init(ws as hvsWS, this);

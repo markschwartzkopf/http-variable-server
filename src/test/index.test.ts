@@ -16,7 +16,7 @@ const testFileRep = { name: 'alteredBeast', value: 'Rise from your grave!' };
 const sleep = async (ms: number) =>
   await new Promise((res) => setTimeout(res, ms));
 
-describe('Replicant.ts', () => {
+describe('Main tests', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({
       headless: false,
@@ -34,17 +34,16 @@ describe('Replicant.ts', () => {
       } catch {}
     });
 
-    console.log('beforeAll')
     await new Promise<void>((res) => {hvs = new HVS(__dirname + '/public/', 9097, 9096, res)})
   });
 
-  it('Should not allow get() of unset value', () => {
+  test('Replicants should not allow get() of unset value', () => {
     let test = hvs!.Replicant<string>('test1Rep');
     expect(() => {
       let x = test.value;
     }).toThrow();
   });
-  it('Should not allow undefined as a value', () => {
+  test('Replicants should not allow undefined as a value', () => {
     let test = hvs!.Replicant<string>('test1Rep');
     test.value = 'something to make it save a .json file for later tests'
     expect(() => {
@@ -52,7 +51,7 @@ describe('Replicant.ts', () => {
       test.value = undefined;
     }).toThrow();
   });
-  it('Should prevent writing to disk too frequently', async () => {
+  test('Replicants should prevent writing to disk too frequently', async () => {
     let test2 = hvs!.Replicant<string>('test2Rep');
     test2.value = 'bad 2nd Value';
     test2.value = '2nd Value';
@@ -60,8 +59,7 @@ describe('Replicant.ts', () => {
     //@ts-ignore
     expect(test2._canSave).toBe(false);
   });
-
-  it('Should restore replicants from disk', async () => {
+  test('Replicants should be restored from disk at startup', async () => {
     await hvs!.close();
     fs.writeFileSync(
       __dirname + '/../../replicants/fileRep.json',
@@ -73,23 +71,48 @@ describe('Replicant.ts', () => {
     await sleep(1000)
     expect(aBeast.value).toBe('Rise from your grave!');
   });
-
-  it('Should serve pages from static directory', async () => {
+  test('HTTP server should serve pages from static directory', async () => {
     await page?.goto('http://localhost:9097/test-page.html');
     await expect(page?.title()).resolves.toBe('http-variable-server test');
   });
-  it('Should be able to instatiate replicants', async () => {
+  test('HTTP server should appropriately send 404', async () => {
+    let page2 = await browser?.newPage();
+    await page2?.goto('http://localhost:9097/test-page2.html');
+    await page2?.on('response', (resp) => {
+      expect(resp.status()).toBe(404)
+    })
+  });
+  test('Browser should be able to instatiate replicants', async () => {
 
     await sleep(700);
     expect(consoleVars.test3).toBe('1st Value');
   });
-  it('Should be able to receive existing replicants', async () => {
+  test('Browser should be able to receive existing replicants', async () => {
     expect(consoleVars.test2).toBe('Rise from your grave!');
   });
+  //test('messages are sent from server to server')
+  //test('messages are sent from server to client')
+  //test('messages are sent from client to server')
+  test('WS client count should be accurate', async () => {
+    expect(hvs?.wsClientCount).toBe(1);
+    await sleep(3000)
+    await page?.close()
+    await sleep(3000)
+    expect(hvs?.wsClientCount).toBe(0);
+  })
 });
 
 afterAll(async () => {
   await browser?.close?.();
   await hvs?.close();
-  await sleep(5000);
+  //await sleep(5000);
 });
+
+
+/* To do:
+Implement messaging
+Develop testing Node client to
+  Send bad data
+  ws.terminate() and test the heartbeat
+  attempt to set unsubscribed Replicant
+ */

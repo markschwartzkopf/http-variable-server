@@ -22,9 +22,11 @@ export default class HVS implements protoHVS {
     wsPort?: number,
     cb?: () => void
   ) {
+    /* istanbul ignore else */
     if (httpPort) {
       this.httpPort = httpPort;
     } else this.httpPort = defaultHttpPort;
+    /* istanbul ignore else */
     if (wsPort) {
       this.wsPort = wsPort;
     } else this.wsPort = defaultWsPort;
@@ -43,7 +45,11 @@ export default class HVS implements protoHVS {
       this._loadReplicantsFromFiles(),
     ])
       .then(cb)
-      .catch((err) => console.log(err));
+      .catch(/* istanbul ignore next */(err) => console.log(err));
+  }
+
+  get wsClientCount(): number {
+    return this._ws!.clients.size;
   }
 
   Replicant<T>(name: string): ServerReplicant<T> {
@@ -71,6 +77,7 @@ export default class HVS implements protoHVS {
             if (err) isError = true;
             setTimeout(() => {
               if (isError) {
+                /* istanbul ignore next */
                 rej(err);
               } else res();
             }, 500);
@@ -88,6 +95,7 @@ export default class HVS implements protoHVS {
       } else {
         fs.readdir(__dirname + '/../replicants', (err, repFiles) => {
           if (err) {
+            /* istanbul ignore next */
             rej1("Can't read replicants directory");
           } else {
             let readfilePromises: Promise<void>[] = [];
@@ -106,11 +114,9 @@ export default class HVS implements protoHVS {
                             fileRep.value,
                             repFiles[i].slice(0, -5)
                           );
-                          console.log(
-                            'Restored replicant "' + fileRep.name + '"'
-                          );
                           res2();
                         } catch {
+                          /* istanbul ignore next */
                           rej2('Corrupted replicant storage file');
                         }
                       }
@@ -124,6 +130,7 @@ export default class HVS implements protoHVS {
                 res1();
               })
               .catch((err) => {
+                /* istanbul ignore next */
                 rej1(err);
               });
           }

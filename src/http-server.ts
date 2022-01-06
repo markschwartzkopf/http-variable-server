@@ -31,6 +31,7 @@ export function startHttpServer(
     .createServer((req, res) => {
       let filePath = '.' + req.url;
       if (filePath == './') {
+        /* istanbul ignore next */
         filePath = './index.html';
       }
       let fileExtention = String(path.extname(filePath)).toLowerCase();
@@ -60,6 +61,7 @@ export function startHttpServer(
           res.end(buf, 'utf-8');
         })
         .catch((err) => {
+          /* istanbul ignore else */
           if (err.code && err.code == 'ENOENT') {
             res.writeHead(404, { 'Content-Type': 'text/html' });
             res.end('File not found', 'utf-8');
@@ -69,9 +71,5 @@ export function startHttpServer(
           }
         });
     })
-    .listen(port, () => {
-      console.log('http server started');
-      if (cb) cb();
-    });
-  //.listen(port, cb);
+    .listen(port, cb);
 }
