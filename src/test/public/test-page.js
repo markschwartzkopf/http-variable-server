@@ -12,4 +12,4 @@ test3.on('change', (newVal) => {
 });
 
 test1.value = '1st Value'
-
+hvs.sendMessage('msgFromClient', '1st msgFromClient');

@@ -4,6 +4,7 @@ type serverMsg =
   | { type: 'msg'; msg: string; data?: any }
   | { type: 'rep'; name: string; rep: any };
 type clientMsg =
+  | { type: 'listen'; msg: string}
   | { type: 'msg'; msg: string; data?: any }
   | { type: 'rep'; name: string; rep: any } //set replicant value
   | { type: 'newRep'; name: string }; //subscribe to replicant updates, (instantiate if needed)

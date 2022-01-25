@@ -1,3 +1,5 @@
+
+
 import { BrowserReplicant, clientMsg, serverMsg, _hvsBrowser } from '../types/';
 
 const hvs: _hvsBrowser = {
@@ -16,11 +18,15 @@ const hvs: _hvsBrowser = {
       }, delay);
     }
   },
-  listenFor: (message: string, cb: () => void) => {
-    console.error('implement hvsBrowser.listenFor()');
+  listenFor: (msg: string, cb: (data: any) => void) => {
+    if (hvs._messageCallbacks.hasOwnProperty(msg)) {
+      hvs._messageCallbacks.msg.push(cb);
+    } else hvs._messageCallbacks.msg = [cb];
   },
-  sendMessage: (message: string) => {
-    console.error('implement hvsBrowser.sendMessage()');
+  sendMessage: (msg: string, data?: any) => {
+    let clientMsg: clientMsg = {type: 'msg', msg: msg}
+    if (data) clientMsg.data = data;
+    hvs._send(clientMsg)
   },
   Replicant<T>(name: string): BrowserReplicant<T> {
     return new _BrowserReplicant(name);
@@ -64,19 +70,19 @@ export class _BrowserReplicant<T> implements BrowserReplicant<T> {
     hvs._send({ type: 'rep', name: this._name, rep: newVal });
   }
   getValue(): Promise<T> {
-    console.log('getValue called')
+    console.log('getValue called');
     return new Promise((res, rej) => {
       if (this._initialized) {
         res(this._value!);
       } else {
         let once = (newVal: T) => {
-          res(newVal)
+          res(newVal);
           this.off('change', once);
-        }
-        this.on('change', once)
+        };
+        this.on('change', once);
         setTimeout(() => {
-          rej('getValue failed for replicant '+ this._name)
-        }, 5000)
+          rej('getValue failed for replicant ' + this._name);
+        }, 5000);
       }
     });
   }
@@ -107,8 +113,11 @@ function _connectToServer() {
     }
   }, 5000);
   hvs._hvsWS = new WebSocket(
-    //@ts-ignore
-    'ws://' + new URL('http://' + window.location.host).hostname + ':' + __wsPort
+    
+    'ws://' +
+      new URL('http://' + window.location.host).hostname +
+      ':' + //@ts-ignore This constant is declared in inline HTML script tag
+      __wsPort
   );
   hvs._hvsWS.onopen = () => {
     clearTimeout(hvs._connector);

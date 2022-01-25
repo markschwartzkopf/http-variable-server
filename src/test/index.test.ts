@@ -11,6 +11,7 @@ let browser: puppeteer.Browser | undefined;
 let page: puppeteer.Page | undefined;
 let hvs: HVS | undefined;
 let consoleVars: { [key: string]: any } = {};
+let msgResponsesFromClient: string[] = []
 const testFileRep = { name: 'alteredBeast', value: 'Rise from your grave!' };
 
 const sleep = async (ms: number) =>
@@ -35,6 +36,7 @@ describe('Main tests', () => {
     });
 
     await new Promise<void>((res) => {hvs = new HVS(__dirname + '/public/', 9097, 9096, res)})
+    
   });
 
   test('Replicants should not allow get() of unset value', () => {
@@ -67,6 +69,12 @@ describe('Main tests', () => {
     );
     await sleep(2000);
     await new Promise<void>((res) => {hvs = new HVS(__dirname + '/public/', 9097, 9096, res)})
+
+    //setup message listener for future test
+    hvs!.listenFor('msgFromClient', (data: string) => {
+      msgResponsesFromClient.push(data);
+    })
+    
     let aBeast = hvs!.Replicant<string>('alteredBeast');
     await sleep(1000)
     expect(aBeast.value).toBe('Rise from your grave!');

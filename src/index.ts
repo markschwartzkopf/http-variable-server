@@ -1,6 +1,5 @@
 import fs from 'fs';
 import http from 'http';
-import { EventEmitter } from 'stream';
 
 import { startHttpServer } from './http-server';
 import { ServerReplicant } from './replicant';
@@ -13,6 +12,7 @@ const defaultWsPort = 9098;
 export default class HVS implements protoHVS {
   readonly httpPort: number;
   readonly wsPort: number;
+  private msgEventHandlers: { [key: string]: ((data?: any) => void)[] } = {};
   private _ws: HVSWS | null = null;
   private _httpServer: http.Server | null = null;
   private _allReplicants: { [key: string]: ServerReplicant<any> } = {};
@@ -40,12 +40,12 @@ export default class HVS implements protoHVS {
         );
       }),
       new Promise<void>((res) => {
-        this._ws = new HVSWS(this.wsPort, this, res);
+        this._ws = new HVSWS(this.wsPort, this, this.msgEventHandlers, res);
       }),
       this._loadReplicantsFromFiles(),
     ])
       .then(cb)
-      .catch(/* istanbul ignore next */(err) => console.log(err));
+      .catch(/* istanbul ignore next */ (err) => console.log(err));
   }
 
   get wsClientCount(): number {
@@ -56,12 +56,29 @@ export default class HVS implements protoHVS {
     return new ServerReplicant<T>(name, this._allReplicants);
   }
 
-  listenFor(message: string, cb: () => void): void {
-    console.error('code HVS.listenFor');
+  listenFor(msg: string, cb: (data: any) => void): void {
+    if (this.msgEventHandlers.hasOwnProperty(msg)) {
+      this.msgEventHandlers[msg].push(cb);
+    } else {
+      this.msgEventHandlers[msg] = [cb];
+    }
   }
-  sendMessage(message: string): void {
-    console.error('code HVS.sendMessage');
+
+  unlisten(msg: string, cb: (data: any) => void): void {
+    if (this.msgEventHandlers[msg]) {
+      let index = this.msgEventHandlers[msg].indexOf(cb);
+      if (index != -1) this.msgEventHandlers[msg].splice(index, 1);
+    }
   }
+
+  sendMessage(msg: string, data?: any): void {
+    if (this.msgEventHandlers.hasOwnProperty(msg)) {
+      for (let i = 0; i < this.msgEventHandlers[msg].length; i++) {
+        this.msgEventHandlers[msg][i](data);
+      }
+    }
+  }
+
   close(): Promise<void> {
     let isError = false;
     let errs: (Error | undefined)[] = [];
