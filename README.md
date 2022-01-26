@@ -8,7 +8,7 @@ Instantiate the server:
 
 ```
 import HVS from 'http-variable-server'; //TypeScript
-const HVS = require('http-variable-server'); //JavaScript
+const HVS = require('http-variable-server').default; //JavaScript
 
 /* Start http server on port 8888, pointing to files in the "../public" directory, sending variables/messages via websockets on port 8889 */
 const hvs = new HVS(__dirname + '/../public/', 8888, 8889, () => {
@@ -42,3 +42,5 @@ hvs.listenFor('printMessage', (data) => {
 
 hvs.sendMessage('printMessage', 'dope.');
 ```
+
+An example of working code is in the `/example` folder
