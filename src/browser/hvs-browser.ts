@@ -1,5 +1,3 @@
-
-
 import { BrowserReplicant, clientMsg, serverMsg, _hvsBrowser } from '../types/';
 
 const hvs: _hvsBrowser = {
@@ -20,13 +18,16 @@ const hvs: _hvsBrowser = {
   },
   listenFor: (msg: string, cb: (data: any) => void) => {
     if (hvs._messageCallbacks.hasOwnProperty(msg)) {
-      hvs._messageCallbacks.msg.push(cb);
-    } else hvs._messageCallbacks.msg = [cb];
+      hvs._messageCallbacks[msg].push(cb);
+    } else {
+      hvs._messageCallbacks[msg] = [cb];
+      hvs._send({ type: 'listen', msg: msg });
+    }
   },
   sendMessage: (msg: string, data?: any) => {
-    let clientMsg: clientMsg = {type: 'msg', msg: msg}
+    let clientMsg: clientMsg = { type: 'msg', msg: msg };
     if (data) clientMsg.data = data;
-    hvs._send(clientMsg)
+    hvs._send(clientMsg);
   },
   Replicant<T>(name: string): BrowserReplicant<T> {
     return new _BrowserReplicant(name);
@@ -113,10 +114,9 @@ function _connectToServer() {
     }
   }, 5000);
   hvs._hvsWS = new WebSocket(
-    
     'ws://' +
-      new URL('http://' + window.location.host).hostname +
-      ':' + //@ts-ignore This constant is declared in inline HTML script tag
+    new URL('http://' + window.location.host).hostname +
+    ':' + //@ts-ignore This constant is declared in inline HTML script tag
       __wsPort
   );
   hvs._hvsWS.onopen = () => {
@@ -145,6 +145,14 @@ function _connectToServer() {
     if (data) {
       switch (data.type) {
         case 'msg':
+          if (hvs._messageCallbacks.hasOwnProperty(data.msg)) {
+            for (let i = 0; i < hvs._messageCallbacks[data.msg].length; i++) {
+              hvs._messageCallbacks[data.msg][i](data.data);
+            }
+          } else
+            console.error(
+              'Received unexpected message from server: "' + data.msg + '"'
+            );
           break;
         case 'rep':
           if (hvs._allReplicants[data.name]) {

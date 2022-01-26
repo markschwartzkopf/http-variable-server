@@ -84,7 +84,7 @@ function init(ws: hvsWS, server: HVSWS) {
           const msg = data.msg;
           let socketListener = (data: any) => {
             let clientMsg: clientMsg = { type: 'msg', msg: msg };
-            if (data.data) clientMsg.data = data;
+            if (data) clientMsg.data = data;
             ws.hvsSend(clientMsg);
           };
           server.parentServer.listenFor(msg, socketListener);

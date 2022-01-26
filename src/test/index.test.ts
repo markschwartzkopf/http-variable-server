@@ -11,7 +11,7 @@ let browser: puppeteer.Browser | undefined;
 let page: puppeteer.Page | undefined;
 let hvs: HVS | undefined;
 let consoleVars: { [key: string]: any } = {};
-let msgResponsesFromClient: string[] = []
+let msgResponsesFromClient: string[] = [];
 const testFileRep = { name: 'alteredBeast', value: 'Rise from your grave!' };
 
 const sleep = async (ms: number) =>
@@ -35,8 +35,9 @@ describe('Main tests', () => {
       } catch {}
     });
 
-    await new Promise<void>((res) => {hvs = new HVS(__dirname + '/public/', 9097, 9096, res)})
-    
+    await new Promise<void>((res) => {
+      hvs = new HVS(__dirname + '/public/', 9097, 9096, res);
+    });
   });
 
   test('Replicants should not allow get() of unset value', () => {
@@ -47,7 +48,7 @@ describe('Main tests', () => {
   });
   test('Replicants should not allow undefined as a value', () => {
     let test = hvs!.Replicant<string>('test1Rep');
-    test.value = 'something to make it save a .json file for later tests'
+    test.value = 'something to make it save a .json file for later tests';
     expect(() => {
       //@ts-ignore
       test.value = undefined;
@@ -68,15 +69,17 @@ describe('Main tests', () => {
       JSON.stringify(testFileRep)
     );
     await sleep(2000);
-    await new Promise<void>((res) => {hvs = new HVS(__dirname + '/public/', 9097, 9096, res)})
+    await new Promise<void>((res) => {
+      hvs = new HVS(__dirname + '/public/', 9097, 9096, res);
+    });
 
     //setup message listener for future test
     hvs!.listenFor('msgFromClient', (data: string) => {
       msgResponsesFromClient.push(data);
-    })
-    
+    });
+
     let aBeast = hvs!.Replicant<string>('alteredBeast');
-    await sleep(1000)
+    await sleep(1000);
     expect(aBeast.value).toBe('Rise from your grave!');
   });
   test('HTTP server should serve pages from static directory', async () => {
@@ -87,27 +90,39 @@ describe('Main tests', () => {
     let page2 = await browser?.newPage();
     await page2?.goto('http://localhost:9097/test-page2.html');
     await page2?.on('response', (resp) => {
-      expect(resp.status()).toBe(404)
-    })
+      expect(resp.status()).toBe(404);
+    });
   });
   test('Browser should be able to instatiate replicants', async () => {
-
     await sleep(700);
     expect(consoleVars.test3).toBe('1st Value');
   });
   test('Browser should be able to receive existing replicants', async () => {
     expect(consoleVars.test2).toBe('Rise from your grave!');
   });
-  //test('messages are sent from server to server')
-  //test('messages are sent from server to client')
-  //test('messages are sent from client to server')
+  test('Messages are sent from server to server', () => {
+    let heard = false;
+    hvs!.listenFor('msgFromServer', (data) => {
+      heard = data;
+    });
+    hvs!.sendMessage('msgFromServer', true);
+    expect(heard).toBe(true);
+  });
+  test('Messages are sent from server to client', async () => {
+    hvs!.sendMessage('msgFromServer', 's2c');
+    await sleep(100);
+    expect(consoleVars.serverToClient).toBe('s2c');
+  });
+  test('messages are sent from client to server', () => {
+    expect(msgResponsesFromClient).toEqual(['1st msgFromClient'])
+  })
   test('WS client count should be accurate', async () => {
     expect(hvs?.wsClientCount).toBe(1);
-    await sleep(3000)
-    await page?.close()
-    await sleep(3000)
+    await sleep(3000);
+    await page?.close();
+    await sleep(3000);
     expect(hvs?.wsClientCount).toBe(0);
-  })
+  });
 });
 
 afterAll(async () => {
@@ -116,9 +131,7 @@ afterAll(async () => {
   //await sleep(5000);
 });
 
-
 /* To do:
-Implement messaging
 Develop testing Node client to
   Send bad data
   ws.terminate() and test the heartbeat

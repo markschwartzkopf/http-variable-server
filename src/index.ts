@@ -80,24 +80,11 @@ export default class HVS implements protoHVS {
   }
 
   close(): Promise<void> {
-    let isError = false;
-    let errs: (Error | undefined)[] = [];
     return new Promise((res, rej) => {
-      this._ws!.close((err) => {
-        errs.push(err);
-        if (err) isError = true;
+      this._ws!.close(() => {
         setTimeout(() => {
-          //let httpServer = this._httpServer
-          //const httpTerminator = createHttpTerminator({ server: httpServer })
-          this._httpServer!.close((err) => {
-            errs.push(err);
-            if (err) isError = true;
-            setTimeout(() => {
-              if (isError) {
-                /* istanbul ignore next */
-                rej(err);
-              } else res();
-            }, 500);
+          this._httpServer!.close(() => {
+            setTimeout(res, 500);
           });
         }, 1000);
       });
@@ -111,10 +98,8 @@ export default class HVS implements protoHVS {
         res1();
       } else {
         fs.readdir(__dirname + '/../replicants', (err, repFiles) => {
-          if (err) {
-            /* istanbul ignore next */
-            rej1("Can't read replicants directory");
-          } else {
+          /* istanbul ignore else */
+          if (!err) {
             let readfilePromises: Promise<void>[] = [];
             for (let i = 0; i < repFiles.length; i++) {
               if (repFiles[i].slice(-4) == 'json') {
@@ -146,11 +131,12 @@ export default class HVS implements protoHVS {
               .then(() => {
                 res1();
               })
-              .catch((err) => {
-                /* istanbul ignore next */
-                rej1(err);
-              });
-          }
+              .catch(
+                /* istanbul ignore next */ (err) => {
+                  rej1(err);
+                }
+              );
+          } else rej1("Can't read replicants directory");
         });
       }
     });

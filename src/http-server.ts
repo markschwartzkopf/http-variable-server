@@ -30,8 +30,8 @@ export function startHttpServer(
   return http
     .createServer((req, res) => {
       let filePath = '.' + req.url;
+      /* istanbul ignore next */
       if (filePath == './') {
-        /* istanbul ignore next */
         filePath = './index.html';
       }
       let fileExtention = String(path.extname(filePath)).toLowerCase();
