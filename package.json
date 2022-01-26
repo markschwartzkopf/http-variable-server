@@ -4,8 +4,12 @@
   "description": "Serves pages and shares variables to browsers",
   "main": "dist/index.js",
   "scripts": {
-    "watch": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics --watch",
-    "build": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics",
+    "watch": "npm-run-all -p watch:*",
+    "watch:ts": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics --watch",
+    "watch:copy-types": "onchange -i ./src -- npm-run-all -s build:copy*",
+    "build": "npm-run-all -s build:*",
+    "build:ts": "node ./node_modules/typescript/bin/tsc -p ./src --diagnostics",
+    "build:copy-types": "cpy \"**/*.*\" ../../dist/types/ --cwd=src/types --parents",
     "test": "jest"
   },
   "repository": {
@@ -19,7 +23,10 @@
     "@types/node": "^17.0.6",
     "@types/puppeteer": "^5.4.4",
     "@types/ws": "^8.2.2",
+    "cpy-cli": "^3.1.1",
     "jest": "^27.4.6",
+    "npm-run-all": "^4.1.5",
+    "onchange": "^7.1.0",
     "puppeteer": "^13.0.1",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
