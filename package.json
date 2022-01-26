@@ -1,6 +1,6 @@
 {
   "name": "http-variable-server",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Serves pages and shares variables to browsers",
   "main": "dist/index.js",
   "scripts": {

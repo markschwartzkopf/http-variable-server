@@ -1,6 +1,8 @@
 *.ts
 !*.d.ts
-tsconfig.json
 src
 coverage
 replicants
+.gitignore
+.tsbuildinfo
+tsconfig.json
