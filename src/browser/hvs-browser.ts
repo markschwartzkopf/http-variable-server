@@ -101,7 +101,7 @@ function _connectToServer() {
     console.error('Unexpected HVS race error');
     return;
   } else {
-    console.log('Connectiong to server websocket');
+    console.log('Connecting to server websocket');
   }
   hvs._connector = setTimeout(() => {
     if (!hvs.connected) {
