@@ -3,6 +3,7 @@
 src
 coverage
 replicants
+.vscode
 .gitignore
 .tsbuildinfo
 tsconfig.json
