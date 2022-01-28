@@ -30,6 +30,7 @@ export default class HVS implements protoHVS {
     if (wsPort) {
       this.wsPort = wsPort;
     } else this.wsPort = defaultWsPort;
+    this._loadReplicantsFromFiles();
     Promise.all([
       new Promise<void>((res) => {
         this._httpServer = startHttpServer(
@@ -42,16 +43,15 @@ export default class HVS implements protoHVS {
       new Promise<void>((res) => {
         this._ws = new HVSWS(this.wsPort, this, this.msgEventHandlers, res);
       }),
-      this._loadReplicantsFromFiles(),
     ])
       .then(cb)
-      .catch(/* istanbul ignore next */ (err) => console.log(err));
+      .catch(console.error);
   }
 
   get wsClientCount(): number {
     return this._ws!.clients.size;
   }
-
+  //promisify this
   Replicant<T>(name: string): ServerReplicant<T> {
     return new ServerReplicant<T>(name, this._allReplicants);
   }
@@ -91,54 +91,36 @@ export default class HVS implements protoHVS {
     });
   }
 
-  private _loadReplicantsFromFiles(): Promise<void> {
-    return new Promise((res1, rej1) => {
-      if (!fs.existsSync(__dirname + '/../replicants')) {
-        fs.mkdirSync(__dirname + '/../replicants');
-        res1();
-      } else {
-        fs.readdir(__dirname + '/../replicants', (err, repFiles) => {
-          /* istanbul ignore else */
-          if (!err) {
-            let readfilePromises: Promise<void>[] = [];
-            for (let i = 0; i < repFiles.length; i++) {
-              if (repFiles[i].slice(-4) == 'json') {
-                readfilePromises.push(
-                  new Promise((res2, rej2) => {
-                    fs.readFile(
-                      __dirname + '/../replicants/' + repFiles[i],
-                      (err, buf) => {
-                        try {
-                          let fileRep = JSON.parse(buf.toString());
-                          let rep = new ServerReplicant<any>(
-                            fileRep.name,
-                            this._allReplicants,
-                            fileRep.value,
-                            repFiles[i].slice(0, -5)
-                          );
-                          res2();
-                        } catch {
-                          /* istanbul ignore next */
-                          rej2('Corrupted replicant storage file');
-                        }
-                      }
-                    );
-                  })
-                );
-              }
-            }
-            Promise.all(readfilePromises)
-              .then(() => {
-                res1();
-              })
-              .catch(
-                /* istanbul ignore next */ (err) => {
-                  rej1(err);
-                }
-              );
-          } else rej1("Can't read replicants directory");
-        });
+  private _loadReplicantsFromFiles(): void {
+    if (!fs.existsSync(__dirname + '/../replicants')) {
+      fs.mkdirSync(__dirname + '/../replicants');
+      return;
+    }
+    try {
+      const repFiles = fs.readdirSync(__dirname + '/../replicants');
+      for (let i = 0; i < repFiles.length; i++) {
+        if (repFiles[i].slice(-4) == 'json') {
+          try {
+            let fileRep = JSON.parse(
+              fs
+                .readFileSync(__dirname + '/../replicants/' + repFiles[i])
+                .toString()
+            );
+            let rep = new ServerReplicant<any>(
+              fileRep.name,
+              this._allReplicants,
+              fileRep.value,
+              repFiles[i].slice(0, -5)
+            );
+          } catch {
+            /* istanbul ignore next*/
+            console.error('Bad replicant file: ' + repFiles[i])
+          }
+        }
       }
-    });
+    } catch {
+      /* istanbul ignore next */
+      console.error("Can't read replicants directory");
+    }
   }
 }

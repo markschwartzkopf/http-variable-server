@@ -21,7 +21,7 @@ export class ServerReplicant<T> extends EventEmitter
   private _value: Exclude<T, undefined> | undefined = undefined;
   private _initialized: boolean = false;
   private _canSave: boolean = true;
-  private _filename: string;
+  private _filename: string = '';//only assigned a value to appease TypeScript
   private _name: string;
   constructor(
     name: string,
@@ -31,6 +31,7 @@ export class ServerReplicant<T> extends EventEmitter
   ) {
     super();
     this._name = name;
+    if (allReplicants.hasOwnProperty(name)) return allReplicants[name];
     if (initValue) {
       this._value = initValue;
       this._initialized = true;
@@ -39,8 +40,6 @@ export class ServerReplicant<T> extends EventEmitter
       this._filename = filename;
     } else {
       this._filename = sanitize(name);
-      if (path.basename(name) == name && name != '.' && name != '..')
-        if (allReplicants.hasOwnProperty(name)) return allReplicants[name];
       while (
         fs.existsSync(__dirname + '/../replicants/' + this._filename + '.json')
       ) {
@@ -54,6 +53,7 @@ export class ServerReplicant<T> extends EventEmitter
     if (this._canSave && this._value != undefined) {
       this._canSave = false;
       const oldVal = this._value;
+      console.log('writing ' + this._name + ' to ' + this._filename)
       fs.writeFile(
         __dirname + '/../replicants/' + this._filename + '.json',
         JSON.stringify({ name: this._name, value: this._value }),

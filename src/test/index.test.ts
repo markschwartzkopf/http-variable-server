@@ -132,6 +132,7 @@ afterAll(async () => {
 });
 
 /* To do:
+Verify that multiple replicant files with the same name of replicant 1. throw error 2. are deleted
 Develop testing Node client to
   Send bad data
   ws.terminate() and test the heartbeat
